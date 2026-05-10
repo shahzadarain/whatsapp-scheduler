@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Local data & state
+data/
+logs/
+uploads/
+.wwebjs_auth/
+.wwebjs_cache/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

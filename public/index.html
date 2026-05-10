@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WhatsApp Scheduler</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+  <header class="bg-emerald-700 text-white shadow">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <h1 class="text-xl font-semibold tracking-tight">WhatsApp Scheduler</h1>
+      <div class="flex items-center gap-3 text-sm">
+        <span id="status-dot" class="inline-block w-3 h-3 rounded-full bg-slate-400"></span>
+        <span id="status-text">connecting...</span>
+        <span id="status-tz" class="text-emerald-200 text-xs"></span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 py-6 space-y-6">
+
+    <section id="qr-section" class="hidden bg-white border border-amber-300 rounded-lg p-6 shadow-sm">
+      <h2 class="text-lg font-semibold mb-2">Scan to authenticate</h2>
+      <p class="text-sm text-slate-600 mb-4">
+        Open WhatsApp on your phone &rarr; <strong>Settings &rarr; Linked Devices &rarr; Link a Device</strong>,
+        and scan the QR code below.
+      </p>
+      <img id="qr-img" alt="WhatsApp QR" class="border rounded p-2 bg-white w-72 h-72 object-contain" />
+    </section>
+
+    <section class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+      <h2 class="text-lg font-semibold mb-4">Schedule a new message</h2>
+      <form id="msg-form" class="grid md:grid-cols-2 gap-4" enctype="multipart/form-data">
+        <div>
+          <label class="block text-sm font-medium mb-1">Recipient</label>
+          <input id="f-recipient" type="text" required
+                 class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                 placeholder="962790000000 or 1234567890-1234567890" />
+          <p class="text-xs text-slate-500 mt-1">Country code, no spaces or dashes. Group ID has a dash.</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Chat type</label>
+          <select id="f-type" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
+            <option value="individual">Individual</option>
+            <option value="group">Group</option>
+          </select>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium mb-1">Message kind</label>
+          <div class="flex flex-wrap gap-4 text-sm">
+            <label class="inline-flex items-center gap-2"><input type="radio" name="msg-kind" value="text" checked /> Text</label>
+            <label class="inline-flex items-center gap-2"><input type="radio" name="msg-kind" value="voice" /> Voice note</label>
+            <label class="inline-flex items-center gap-2"><input type="radio" name="msg-kind" value="audio" /> Audio file</label>
+          </div>
+        </div>
+
+        <div class="md:col-span-2" id="text-fields">
+          <label class="block text-sm font-medium mb-1">Message</label>
+          <textarea id="f-message" rows="3"
+                    class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="What do you want to send?"></textarea>
+          <p id="caption-hint" class="hidden text-xs text-slate-500 mt-1">Optional caption (audio only — voice notes ignore captions in WhatsApp).</p>
+        </div>
+
+        <div class="md:col-span-2 hidden" id="audio-fields">
+          <label class="block text-sm font-medium mb-2">Audio</label>
+
+          <div id="audio-panel" class="border border-slate-200 rounded-xl bg-gradient-to-br from-slate-50 to-white overflow-hidden">
+
+            <!-- IDLE STATE -->
+            <div data-state="idle" class="px-6 py-8">
+              <div class="flex flex-col items-center text-center">
+                <button type="button" id="rec-start"
+                        class="group relative w-20 h-20 rounded-full bg-rose-600 text-white shadow-lg shadow-rose-200 hover:bg-rose-700 hover:scale-105 active:scale-95 transition flex items-center justify-center"
+                        aria-label="Start recording">
+                  <svg class="w-9 h-9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3z" />
+                    <path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V20H8a1 1 0 1 0 0 2h8a1 1 0 1 0 0-2h-3v-2.07A7 7 0 0 0 19 11z" />
+                  </svg>
+                </button>
+                <p class="mt-3 text-sm font-medium text-slate-700">Tap to record a voice note</p>
+                <p class="text-xs text-slate-500">Browser will ask for microphone permission</p>
+              </div>
+
+              <div class="my-6 flex items-center gap-3 text-xs text-slate-400">
+                <div class="flex-1 h-px bg-slate-200"></div>
+                <span class="uppercase tracking-wider">or upload a file</span>
+                <div class="flex-1 h-px bg-slate-200"></div>
+              </div>
+
+              <label id="dropzone" for="f-audio-file"
+                     class="block border-2 border-dashed border-slate-300 rounded-lg p-5 text-center cursor-pointer hover:border-emerald-500 hover:bg-emerald-50/40 transition">
+                <svg class="w-7 h-7 mx-auto text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <p class="mt-2 text-sm text-slate-700"><span class="text-emerald-700 font-medium">Click to choose</span> or drag a file here</p>
+                <p class="text-xs text-slate-500 mt-1">ogg / mp3 / m4a / wav / webm — up to 25 MB</p>
+                <input id="f-audio-file" type="file" accept="audio/*" class="hidden" />
+              </label>
+            </div>
+
+            <!-- RECORDING STATE -->
+            <div data-state="recording" hidden class="px-6 py-8">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2 text-rose-600 font-medium text-sm">
+                  <span class="rec-pulse w-2.5 h-2.5 rounded-full bg-rose-600"></span>
+                  Recording
+                </div>
+                <div id="rec-timer" class="font-mono text-2xl font-semibold text-slate-800 tabular-nums">00:00</div>
+              </div>
+
+              <canvas id="rec-waveform" class="w-full h-20 rounded-md bg-slate-900"></canvas>
+
+              <div class="mt-5 flex items-center justify-center gap-3">
+                <button type="button" id="rec-cancel"
+                        class="px-4 py-2 text-sm rounded-lg border border-slate-300 hover:bg-slate-100">Cancel</button>
+                <button type="button" id="rec-stop"
+                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-slate-800 text-white hover:bg-slate-900 shadow">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                  Stop &amp; use
+                </button>
+              </div>
+            </div>
+
+            <!-- READY STATE -->
+            <div data-state="ready" hidden class="px-6 py-6">
+              <div class="flex items-center gap-2 mb-3 text-emerald-700 text-sm font-medium">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Audio attached
+              </div>
+              <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+                <audio id="audio-preview" controls class="w-full"></audio>
+                <p id="audio-meta" class="text-xs text-slate-500 mt-2 truncate"></p>
+              </div>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <button type="button" id="rec-rerecord"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md bg-rose-600 text-white hover:bg-rose-700">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="6"/></svg>
+                  Re-record
+                </button>
+                <label for="f-audio-file" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md border border-slate-300 hover:bg-slate-50 cursor-pointer">
+                  Choose another file
+                </label>
+                <button type="button" id="rec-clear"
+                        class="ml-auto px-3 py-1.5 text-sm rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50">Clear</button>
+              </div>
+            </div>
+
+          </div>
+          <p class="text-xs text-slate-500 mt-2">Voice notes send as PTT bubbles. Audio files send as attachments and use the message text as caption.</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Send at (local time)</label>
+          <input id="f-sendat" type="datetime-local" required
+                 class="w-full border border-slate-300 rounded px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Recurrence</label>
+          <input id="f-recurrence" type="text" placeholder="none / daily / weekly / monthly / cron e.g. 0 9 * * 1-5"
+                 class="w-full border border-slate-300 rounded px-3 py-2 text-sm" />
+        </div>
+        <div class="md:col-span-2 flex justify-end gap-2">
+          <button type="button" id="f-cancel"
+                  class="hidden px-4 py-2 text-sm rounded border border-slate-300 hover:bg-slate-50">Cancel edit</button>
+          <button type="submit"
+                  class="px-4 py-2 text-sm rounded bg-emerald-600 text-white hover:bg-emerald-700">
+            <span id="f-submit-label">Schedule</span>
+          </button>
+        </div>
+      </form>
+      <p id="form-error" class="hidden mt-3 text-sm text-red-600"></p>
+    </section>
+
+    <section class="bg-white rounded-lg shadow-sm border border-slate-200">
+      <div class="px-6 py-4 border-b flex items-center justify-between">
+        <h2 class="text-lg font-semibold">Scheduled messages</h2>
+        <span id="pending-count" class="text-sm text-slate-500"></span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-slate-600">
+            <tr>
+              <th class="text-left px-4 py-2">Recipient</th>
+              <th class="text-left px-4 py-2">Type</th>
+              <th class="text-left px-4 py-2">Message</th>
+              <th class="text-left px-4 py-2">Send at (local)</th>
+              <th class="text-left px-4 py-2">Recurrence / next</th>
+              <th class="text-left px-4 py-2">Status</th>
+              <th class="text-right px-4 py-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="pending-tbody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-lg shadow-sm border border-slate-200">
+      <div class="px-6 py-4 border-b flex items-center justify-between">
+        <h2 class="text-lg font-semibold">History</h2>
+        <span class="text-xs text-slate-500">Last 200 sent / failed</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-slate-600">
+            <tr>
+              <th class="text-left px-4 py-2">Recipient</th>
+              <th class="text-left px-4 py-2">Type</th>
+              <th class="text-left px-4 py-2">Message</th>
+              <th class="text-left px-4 py-2">Sent at (local)</th>
+              <th class="text-left px-4 py-2">Status</th>
+              <th class="text-left px-4 py-2">Error</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="text-xs text-slate-500 py-6 text-center">
+      Automating WhatsApp Web may violate WhatsApp's Terms of Service. Use only for personal, consented messaging.
+    </footer>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

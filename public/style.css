@@ -1,0 +1,17 @@
+html, body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+table th { font-weight: 600; }
+input:focus, textarea:focus, select:focus { outline: none; }
+
+@keyframes recPulse {
+  0%   { transform: scale(1);   opacity: 1; box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.55); }
+  70%  { transform: scale(1.1); opacity: .85; box-shadow: 0 0 0 10px rgba(225, 29, 72, 0); }
+  100% { transform: scale(1);   opacity: 1; box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }
+}
+.rec-pulse { animation: recPulse 1.4s ease-out infinite; }
+
+#dropzone.is-dragover {
+  border-color: rgb(5, 150, 105);
+  background-color: rgb(236, 253, 245);
+}
+
+#audio-panel [hidden] { display: none !important; }
