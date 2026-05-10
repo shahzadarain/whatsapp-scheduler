@@ -7,6 +7,22 @@ Personal WhatsApp scheduled-message sender, built on Node.js, [whatsapp-web.js](
 
 ---
 
+## Screenshots
+
+Dashboard — connected client, schedule form, pending queue and history (recipients shown are example data):
+
+![Dashboard](screenshots/dashboard.png)
+
+Composing a voice note — record from the browser or upload a file:
+
+![Voice note compose](screenshots/compose-voice.png)
+
+Scheduled messages and history tables:
+
+![Tables](screenshots/tables.png)
+
+---
+
 ## Features
 
 - WhatsApp Web auth via QR (LocalAuth — session persists across restarts)
